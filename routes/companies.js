@@ -19,11 +19,8 @@ router.get("/:code", async function(req, res, next) {
     try {
         const compResp = await db.query(
             'SELECT c.code, c.name, c.description, i.industry FROM companies AS c LEFT JOIN companies_industries AS ci ON c.code = ci.comp_code LEFT JOIN industries AS i ON ci.ind_code = i.code WHERE c.code=$1', [req.params.code]);
-        console.log(compResp.rows);
         let industries = compResp.rows.map(i=>i.industry);
-        console.log(industries);
         const invResp = await db.query(`SELECT id, amt, paid, add_date, paid_date FROM invoices WHERE comp_code=$1`, [req.params.code]);
-        console.log(invResp.rows)
         if (compResp.rows.length === 0) {
             throw new expressError(`Company not found`, 404)
         }

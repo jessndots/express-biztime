@@ -32,7 +32,6 @@ router.post("/", async function(req, res, next){
     try{
         const {code, industry} = req.body;
         const result = await db.query(`INSERT INTO industries (code, industry) VALUES ($1, $2) RETURNING code, industry`, [code, industry]);
-        console.log(result);
         return res.status(201).json(result.rows[0]);
     }
     catch(err) {
