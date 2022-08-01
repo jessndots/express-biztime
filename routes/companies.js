@@ -1,12 +1,13 @@
 const express = require("express");
 const expressError = require('../expressError');
+const slugify = require("slugify");
 const router = new express.Router();
 const db = require("../db")
 
 
 router.get("/", async function(req, res, next){
     try{ 
-        const results = await db.query(`SELECT code, name FROM companies`);
+        const results = await db.query(`SELECT code, name, description FROM companies`);
         return res.json(results.rows);}
     catch(err){
         return next(err);
@@ -16,16 +17,20 @@ router.get("/", async function(req, res, next){
 
 router.get("/:code", async function(req, res, next) {
     try {
-        const companyResp = await db.query(
-            'SELECT code, name FROM companies WHERE code=$1', [req.params.code]);
-        const invoiceResp = await db.query(`SELECT id, amt, paid, add_date, paid_date FROM invoices WHERE comp_Code=$1`, [req.params.code])
-        if (companyResp.rows.length === 0) {
-            throw new expressError(`Could not find company with code: ${req.params.code}`, 404)
+        const compResp = await db.query(
+            'SELECT c.code, c.name, c.description, i.industry FROM companies AS c LEFT JOIN companies_industries AS ci ON c.code = ci.comp_code LEFT JOIN industries AS i ON ci.ind_code = i.code WHERE c.code=$1', [req.params.code]);
+        console.log(compResp.rows);
+        let industries = compResp.rows.map(i=>i.industry);
+        console.log(industries);
+        const invResp = await db.query(`SELECT id, amt, paid, add_date, paid_date FROM invoices WHERE comp_code=$1`, [req.params.code]);
+        console.log(invResp.rows)
+        if (compResp.rows.length === 0) {
+            throw new expressError(`Company not found`, 404)
         }
-        const company = companyResp.rows[0];
-        company.invoices = invoiceResp.rows;
+        let comp = compResp.rows[0];
+        comp.invoices = invResp.rows;
         
-        return res.json(company);
+        return res.json(comp);
     }
     catch(err){
         return next(err);
@@ -35,8 +40,8 @@ router.get("/:code", async function(req, res, next) {
 
 router.post("/", async function(req, res, next){
     try{
-        const {code, name, description} = req.body;
-        const result = await db.query(`INSERT INTO companies (code, name, description) VALUES ($1, $2, $3) RETURNING code, name, description`, [code, name, description]);
+        const {name, description} = req.body;
+        const result = await db.query(`INSERT INTO companies (code, name, description) VALUES ($1, $2, $3) RETURNING code, name, description`, [slugify(name), name, description]);
         return res.status(201).json(result.rows[0]);
     }
     catch(err) {

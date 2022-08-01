@@ -16,6 +16,9 @@ app.use("/companies", companyRoutes);
 const invoiceRoutes = require(`./routes/invoices.js`);
 app.use(`/invoices`, invoiceRoutes);
 
+const industryRoutes = require(`./routes/industries.js`);
+app.use(`/industries`, industryRoutes)
+
 
 /** 404 handler */
 
@@ -31,7 +34,6 @@ app.use((err, req, res, next) => {
 
   return res.json({
     error: err,
-    message: err.message
   });
 });
 
